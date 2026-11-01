@@ -1,0 +1,10 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "lib": ["ES2023"],
+    "paths": { "@shared/*": ["../shared/*"] },
+    "noEmit": true
+  },
+  "include": ["src", "test", "../shared", "drizzle.config.ts", "vitest.config.ts"]
+}
