@@ -1,0 +1,203 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/vazirmatn/wght.css';
+@import '@fontsource/lalezar/arabic-400.css';
+@import '@fontsource/lalezar/latin-400.css';
+
+/* ------------------------------------------------------------------
+   LiveGameChat Pars tokens.
+   Lapis surfaces; firoozeh (turquoise) marks what is live, saffron marks
+   what is about you, pomegranate marks danger.
+   ------------------------------------------------------------------ */
+:root,
+[data-theme='dark'] {
+  --bg-0: #0b1626; /* server rail */
+  --bg-1: #102036; /* sidebars */
+  --bg-2: #142843; /* chat */
+  --bg-3: #1b3354; /* inputs, popovers */
+  --bg-4: #22406a; /* raised controls */
+  --line: #24406a;
+  --text-1: #e9eef6;
+  --text-2: #a9b7cc;
+  --text-3: #7f93b0;
+  --accent: #2ec4b6;
+  --accent-strong: #63dbcf;
+  --accent-ink: #062a27;
+  --accent-soft: rgba(46, 196, 182, 0.14);
+  --saffron: #f2b33d;
+  --mention-bg: rgba(242, 179, 61, 0.09);
+  --mention-line: #f2b33d;
+  --danger: #d93a40;
+  --danger-text: #ff7a7e;
+  --idle: #f2b33d;
+  --offline: #6b7f9c;
+  --hover: rgba(169, 183, 204, 0.08);
+  --scrim: rgba(4, 10, 20, 0.72);
+  --shadow: 0 12px 32px rgba(2, 8, 18, 0.55);
+  color-scheme: dark;
+}
+
+[data-theme='light'] {
+  --bg-0: #d3deec;
+  --bg-1: #e6ecf5;
+  --bg-2: #f7f9fc;
+  --bg-3: #ffffff;
+  --bg-4: #e9eff8;
+  --line: #c9d5e6;
+  --text-1: #0f1e33;
+  --text-2: #3e5273;
+  --text-3: #5a6e8f;
+  --accent: #087b72;
+  --accent-strong: #06655e;
+  --accent-ink: #ffffff;
+  --accent-soft: rgba(8, 123, 114, 0.12);
+  --saffron: #a86a00;
+  --mention-bg: rgba(242, 179, 61, 0.16);
+  --mention-line: #d99a1e;
+  --danger: #c9363b;
+  --danger-text: #b42c31;
+  --idle: #c98a12;
+  --offline: #8796ad;
+  --hover: rgba(15, 30, 51, 0.06);
+  --scrim: rgba(15, 30, 51, 0.45);
+  --shadow: 0 12px 32px rgba(15, 30, 51, 0.18);
+  color-scheme: light;
+}
+
+@theme inline {
+  --color-bg-0: var(--bg-0);
+  --color-bg-1: var(--bg-1);
+  --color-bg-2: var(--bg-2);
+  --color-bg-3: var(--bg-3);
+  --color-bg-4: var(--bg-4);
+  --color-line: var(--line);
+  --color-text-1: var(--text-1);
+  --color-text-2: var(--text-2);
+  --color-text-3: var(--text-3);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-saffron: var(--saffron);
+  --color-danger: var(--danger);
+  --color-danger-text: var(--danger-text);
+  --color-idle: var(--idle);
+  --color-offline: var(--offline);
+  --color-hover: var(--hover);
+  --font-sans: 'Vazirmatn Variable', 'Vazirmatn', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Lalezar', 'Vazirmatn Variable', system-ui, sans-serif;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg-2);
+  color: var(--text-1);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow: hidden;
+}
+
+html[lang='en'] body {
+  line-height: 1.55;
+}
+
+/* Keyboard focus is always visible, in firoozeh. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+::selection {
+  background: var(--accent-soft);
+}
+
+/* Slim scrollbars that stay out of the way. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--bg-4) transparent;
+}
+
+button {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: not-allowed;
+}
+
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+.font-display {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1.25;
+}
+
+/* Persian tile pattern (khatam): eight-point stars on lapis. Used only on the sign-in screen and empty states. */
+.tile-bg {
+  background-color: var(--bg-0);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'%3E%3Cg fill='none' stroke='%232ec4b6' stroke-opacity='.16' stroke-width='1.2'%3E%3Cpath d='M48 14.6 57.9 24.6H72v14.1l9.9 9.9-9.9 9.9v14.1H57.9L48 82.5l-9.9-9.9H23.9V58.4L14 48.5l9.9-9.9V24.6h14.2z'/%3E%3Cpath d='M0 0h12l6 6-6 6H0M96 0H84l-6 6 6 6h12M0 96h12l6-6-6-6H0M96 96H84l-6-6 6-6h12'/%3E%3Ccircle cx='48' cy='48.5' r='9'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* Spoilers stay hidden until clicked. */
+.spoiler {
+  background: var(--bg-4);
+  color: transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: color 120ms;
+}
+.spoiler * {
+  visibility: hidden;
+}
+.spoiler[data-open='true'] {
+  color: inherit;
+  background: var(--hover);
+}
+.spoiler[data-open='true'] * {
+  visibility: visible;
+}
+
+/* Speaking ring for voice participants. */
+.speaking {
+  box-shadow:
+    0 0 0 2px var(--bg-1),
+    0 0 0 4px var(--accent);
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.pop-in {
+  animation: pop-in 120ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -16,11 +16,13 @@
     "build": "npm run build -w client && npm run build -w server",
     "start": "npm start -w server",
     "test": "npm test -w server",
-    "test:e2e": "playwright test -c e2e/playwright.config.ts",
+    "test:e2e": "npm run build && playwright test -c e2e/playwright.config.ts",
     "typecheck": "npm run typecheck -w server && npm run typecheck -w client",
-    "db:generate": "npm run db:generate -w server"
+    "db:generate": "npm run db:generate -w server",
+    "check:i18n": "node client/scripts/check-i18n.mjs"
   },
   "devDependencies": {
+    "@playwright/test": "1.63.0",
     "concurrently": "10.0.6",
     "typescript": "6.0.3"
   }

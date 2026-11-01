@@ -29,6 +29,11 @@ describe('accounts', () => {
     expect(login.headers.get('set-cookie')).toContain('HttpOnly');
 
     expect((await anon.get('/api/auth/me')).status).toBe(401);
+    // The session probe never fails, so public pages stay quiet for visitors.
+    const visitor = await anon.get('/api/auth/session');
+    expect(visitor.status).toBe(200);
+    expect(visitor.body.user).toBeNull();
+    expect((await alice.get('/api/auth/session')).body.user.id).toBe(alice.user.id);
     expect((await alice.get('/api/auth/me')).body.user.id).toBe(alice.user.id);
   });
 

@@ -69,6 +69,12 @@ export default async function authRoutes(app: FastifyInstance, ctx: AppContext) 
     return { ok: true };
   });
 
+  // Like /me, but answers 200 with user: null for visitors (no console noise on public pages).
+  app.get('/api/auth/session', async (req) => {
+    const user = await ctx.auth.userFromToken(ctx.auth.tokenFromRequest(req));
+    return { user: user ? selfUser(user, ctx.presence) : null };
+  });
+
   app.get('/api/auth/me', { preHandler: ctx.auth.requireUser }, async (req) => {
     return { user: selfUser(req.user, ctx.presence) };
   });

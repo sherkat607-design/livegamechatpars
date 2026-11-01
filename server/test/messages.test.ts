@@ -158,6 +158,9 @@ describe('messages', () => {
     await owner.ok('POST', `/api/channels/${secret.id}/messages`, { content: 'staff unicorn plans' });
     expect((await member.ok('GET', `/api/search?serverId=${serverId}&q=unicorn`)).total).toBe(2);
     expect((await owner.ok('GET', `/api/search?serverId=${serverId}&q=unicorn`)).total).toBe(3);
+    // Poll questions are searchable too.
+    await send(owner, '', { poll: { question: 'unicorn or dragon?', options: ['unicorn', 'dragon'] } });
+    expect((await member.ok('GET', `/api/search?serverId=${serverId}&q=dragon`)).total).toBe(1);
     // Wildcards are escaped.
     expect((await member.ok('GET', `/api/search?serverId=${serverId}&q=%25`)).total).toBe(0);
   });

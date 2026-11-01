@@ -16,6 +16,7 @@ const sendSchema = z.object({
   content: z.string().max(LIMITS.messageMax).default(''),
   replyToId: z.number().int().positive().nullable().optional(),
   mentionReplied: z.boolean().optional(),
+  nonce: z.string().max(64).optional(),
   poll: z
     .object({
       question: z.string().trim().min(1).max(LIMITS.pollQuestionMax),
@@ -179,6 +180,7 @@ export default async function messageRoutes(app: FastifyInstance, ctx: AppContex
         poll,
         canMentionEveryone: has(access.perms, P.MENTION_EVERYONE),
         recipientIds: access.isDm ? access.recipientIds : undefined,
+        nonce: body.nonce,
       });
     } catch (err) {
       for (const f of files) await ctx.uploads.remove(f.url);

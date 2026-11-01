@@ -39,6 +39,7 @@ function parseCookies(header: string | undefined): Record<string, string> {
 export class Gateway {
   readonly io: IOServer;
   readonly voice: VoiceManager;
+  /** Last relayed typing event per `${userId}:${channelId}` (anti-spam). */
   private typingAt = new Map<string, number>();
 
   constructor(
@@ -226,7 +227,9 @@ export class Gateway {
       await this.voice.leaveSocket(socket.id).catch(() => undefined);
       const was = presence.statusOf(userId);
       presence.disconnect(userId, socket.id);
-      for (const key of this.typingAt.keys()) if (key.startsWith(`${socket.id}:`)) this.typingAt.delete(key);
+      if (!presence.isOnline(userId)) {
+        for (const key of this.typingAt.keys()) if (key.startsWith(`${userId}:`)) this.typingAt.delete(key);
+      }
       if (presence.statusOf(userId) !== was) await this.broadcastUserById(userId).catch(() => undefined);
     });
   }
@@ -235,13 +238,18 @@ export class Gateway {
     const userId = socket.data.userId as number;
     const channelId = Number(payload?.channelId);
     if (!Number.isInteger(channelId) || channelId <= 0) return;
-    const key = `${socket.id}:${channelId}`;
+    const key = `${userId}:${channelId}`;
     const now = Date.now();
     if (now - (this.typingAt.get(key) ?? 0) < 2000) return;
     this.typingAt.set(key, now);
     const access = await loadChannelAccess(this.app.db, channelId, userId);
     if (!has(access.perms, P.SEND_MESSAGES)) return;
     await this.toChannel(access.channel, 'typing', { channelId, userId }, access.isDm ? access.recipientIds : undefined);
+  }
+
+  /** A sent message ends "typing", so the next keystroke may be relayed right away. */
+  clearTypingThrottle(userId: number, channelId: number) {
+    this.typingAt.delete(`${userId}:${channelId}`);
   }
 
   /** Users currently online in a set of user ids. */

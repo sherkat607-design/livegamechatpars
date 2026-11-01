@@ -187,6 +187,8 @@ export interface CreateMessageInput {
   canMentionEveryone?: boolean;
   /** DM recipients (for DMs and group DMs). */
   recipientIds?: number[];
+  /** Client-generated id echoed back for optimistic UI. */
+  nonce?: string;
 }
 
 /** Keep only mentions that point at people and roles in this channel's scope. */
@@ -277,6 +279,7 @@ export async function createMessage(app: AppContext, input: CreateMessageInput):
     return msg;
   });
   channel.lastMessageId = row.id;
+  if (input.authorId) gateway.clearTypingThrottle(input.authorId, channel.id);
 
   // Who gets a mention badge.
   const pinged = new Set<number>();
@@ -313,7 +316,8 @@ export async function createMessage(app: AppContext, input: CreateMessageInput):
       });
   }
 
-  const [dto] = await hydrateMessages(app, [row], input.authorId ?? 0);
+  const [hydrated] = await hydrateMessages(app, [row], input.authorId ?? 0);
+  const dto: Message = input.nonce ? { ...hydrated, nonce: input.nonce } : hydrated;
   if (isDm) await gateway.revealDm(channel.id, input.recipientIds ?? []);
   await gateway.toChannel(channel, 'message:create', dto, input.recipientIds);
   return dto;

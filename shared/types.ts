@@ -156,6 +156,8 @@ export interface Message {
   reactions: ReactionSummary[];
   poll: Poll | null;
   createdAt: string;
+  /** Echo of the client-generated id used to match optimistic messages. */
+  nonce?: string;
 }
 
 export interface ReadState {

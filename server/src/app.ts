@@ -154,7 +154,6 @@ export async function buildApp(config: Config): Promise<BuiltApp> {
     await app.register(fastifyStatic, {
       root: config.clientDist,
       prefix: '/',
-      wildcard: false,
       setHeaders(res, filePath) {
         if (filePath.includes('/assets/')) res.header('Cache-Control', 'public, max-age=31536000, immutable');
         else res.header('Cache-Control', 'no-cache');

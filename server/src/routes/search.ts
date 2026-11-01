@@ -43,7 +43,10 @@ export default async function searchRoutes(app: FastifyInstance, ctx: AppContext
     }
     if (channelIds.length === 0) return { total: 0, messages: [] };
     const conds: SQL[] = [inArray(messages.channelId, channelIds), eq(messages.type, 'default')];
-    if (q.q) conds.push(ilike(messages.content, `%${q.q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`));
+    if (q.q) {
+      const pattern = `%${q.q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+      conds.push(or(ilike(messages.content, pattern), sql`${messages.poll}->>'question' ilike ${pattern}`)!);
+    }
     if (q.authorId) conds.push(eq(messages.authorId, q.authorId));
     if (q.mentions) conds.push(arrayContains(messages.mentions, [q.mentions]));
     if (q.pinned) conds.push(eq(messages.pinned, q.pinned === 'true'));
