@@ -4,7 +4,7 @@ import { Headphones, HeadphoneOff, Mic, MicOff, MonitorUp, PhoneOff, Settings, V
 import type { PresenceStatus } from '@shared/types';
 import { useT } from '../../i18n';
 import { updateProfile } from '../../lib/actions';
-import { useVoice, voice } from '../../lib/voice';
+import { canShareScreen, useVoice, voice } from '../../lib/voice';
 import { dmName, useStore } from '../../store';
 import { useUi } from '../../store/ui';
 import { Avatar, cx, IconButton, Popover, STATUS_COLOR, type Anchor } from '../ui';
@@ -39,7 +39,7 @@ export function VoicePanel() {
           <PhoneOff size={18} />
         </IconButton>
       </div>
-      <div className="mt-2 grid grid-cols-2 gap-1.5">
+      <div className={cx('mt-2 grid gap-1.5', canShareScreen ? 'grid-cols-2' : 'grid-cols-1')}>
         <button
           type="button"
           onClick={() => void voice.toggleCamera()}
@@ -49,6 +49,7 @@ export function VoicePanel() {
           {v.video ? <Video size={16} /> : <VideoOff size={16} />}
           {t('voice.camera')}
         </button>
+        {canShareScreen && (
         <button
           type="button"
           onClick={() => void voice.toggleScreen()}
@@ -58,6 +59,7 @@ export function VoicePanel() {
           <MonitorUp size={16} />
           {t('voice.screen')}
         </button>
+        )}
       </div>
     </div>
   );

@@ -1,0 +1,79 @@
+# Builds the Android app on GitHub's servers (they have the Android SDK).
+# Run it from the "Actions" tab → "Android app" → "Run workflow", and enter your server address.
+# The APK appears under the run's "Artifacts".
+#
+# Optional signed release (for Google Play), add these repository secrets:
+#   ANDROID_KEYSTORE_BASE64  base64 of your .jks keystore file
+#   ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
+name: Android app
+
+on:
+  workflow_dispatch:
+    inputs:
+      server_url:
+        description: "Your server address, for example https://chat.example.com"
+        required: true
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    env:
+      LGCP_SERVER_URL: ${{ inputs.server_url || vars.LGCP_SERVER_URL }}
+      LGCP_VERSION_CODE: ${{ github.run_number }}
+      LGCP_VERSION_NAME: ${{ github.ref_type == 'tag' && github.ref_name || format('1.0.{0}', github.run_number) }}
+      HAS_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the server address
+        run: |
+          if [ -z "$LGCP_SERVER_URL" ]; then
+            echo "::error::Enter server_url when running the workflow, or set the LGCP_SERVER_URL repository variable."
+            exit 1
+          fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - run: npm ci
+
+      - name: Build the app's web bundle and copy it into the Android project
+        run: npm run android:sync
+
+      - name: Build debug APK
+        working-directory: mobile/android
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Build signed release APK and Google Play bundle
+        if: env.HAS_KEYSTORE == 'true'
+        working-directory: mobile/android
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          LGCP_KEYSTORE_PATH: ${{ runner.temp }}/release.jks
+          LGCP_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          LGCP_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          LGCP_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          echo "$KEYSTORE_B64" | base64 -d > "$LGCP_KEYSTORE_PATH"
+          ./gradlew assembleRelease bundleRelease --no-daemon
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: livegamechatpars-android
+          path: |
+            mobile/android/app/build/outputs/apk/debug/*.apk
+            mobile/android/app/build/outputs/apk/release/*.apk
+            mobile/android/app/build/outputs/bundle/release/*.aab
+          if-no-files-found: error

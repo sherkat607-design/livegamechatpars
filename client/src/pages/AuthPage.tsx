@@ -4,6 +4,7 @@ import type { SelfUser } from '@shared/types';
 import { LIMITS } from '@shared/constants';
 import { errorText, getLang, setLang, useLang, useT } from '../i18n';
 import { api, ApiError } from '../lib/api';
+import { setToken } from '../lib/env';
 import { BrandMark, Button, Field, Input } from '../components/ui';
 
 export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
@@ -27,8 +28,11 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
     setError(null);
     setFieldErrors({});
     try {
-      if (mode === 'login') await api.post<{ user: SelfUser }>('/api/auth/login', { login, password });
-      else await api.post<{ user: SelfUser }>('/api/auth/register', { username, displayName: displayName || undefined, email, password, locale: getLang() });
+      const res =
+        mode === 'login'
+          ? await api.post<{ user: SelfUser; token: string }>('/api/auth/login', { login, password })
+          : await api.post<{ user: SelfUser; token: string }>('/api/auth/register', { username, displayName: displayName || undefined, email, password, locale: getLang() });
+      setToken(res.token);
       navigate(next.startsWith('/') ? next : '/channels/@me', { replace: true });
     } catch (err) {
       if (err instanceof ApiError && err.code === 'invalid_body') {

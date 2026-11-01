@@ -17,6 +17,7 @@ import { dmName, displayName, useStore } from '../store';
 import { api } from './api';
 import { registerEmojiUrls, plainText } from './markdown';
 import { desktopNotify, setTitleBadge, sounds, startRinging, stopRinging } from './notify';
+import { absolutize } from './env';
 import { closeSocket, getSocket, openSocket } from './socket';
 import { useVoice, voice } from './voice';
 
@@ -109,8 +110,11 @@ function onMessage(m: Message) {
 export function startRealtime() {
   const socket = openSocket();
   const store = useStore.getState;
+  // Every server event passes through absolutize (media URLs in the app build).
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const on = (event: string, fn: (data: any) => void) => socket.on(event, (data: unknown) => fn(absolutize(data)));
 
-  socket.on('ready', async () => {
+  on('ready', async () => {
     try {
       await loadBootstrap();
       store().setConnected(true);
@@ -124,57 +128,57 @@ export function startRealtime() {
       // the 401 handler takes over
     }
   });
-  socket.on('disconnect', () => store().setConnected(false));
-  socket.on('connect_error', () => store().setConnected(false));
+  on('disconnect', () => store().setConnected(false));
+  on('connect_error', () => store().setConnected(false));
 
-  socket.on('message:create', (m: Message) => onMessage(m));
-  socket.on('message:update', (m: Message) => store().updateMessage(m));
-  socket.on('message:delete', (e: { id: number; channelId: number }) => store().deleteMessage(e.channelId, e.id));
-  socket.on('message:thread', (e: { messageId: number; channelId: number; thread: { id: number; name: string } }) =>
+  on('message:create', (m: Message) => onMessage(m));
+  on('message:update', (m: Message) => store().updateMessage(m));
+  on('message:delete', (e: { id: number; channelId: number }) => store().deleteMessage(e.channelId, e.id));
+  on('message:thread', (e: { messageId: number; channelId: number; thread: { id: number; name: string } }) =>
     store().patchMessage(e.channelId, e.messageId, { thread: e.thread }),
   );
-  socket.on('reaction:add', (e) => store().reaction(e, true));
-  socket.on('reaction:remove', (e) => store().reaction(e, false));
-  socket.on('poll:update', (e) => store().pollUpdate(e));
-  socket.on('typing', (e: { channelId: number; userId: number }) => {
+  on('reaction:add', (e) => store().reaction(e, true));
+  on('reaction:remove', (e) => store().reaction(e, false));
+  on('poll:update', (e) => store().pollUpdate(e));
+  on('typing', (e: { channelId: number; userId: number }) => {
     if (e.userId !== store().me?.id) store().setTyping(e.channelId, e.userId);
   });
 
-  socket.on('user:update', (u: PublicUser) => store().upsertUsers([u]));
-  socket.on('server:create', (b: ServerBundle) => {
+  on('user:update', (u: PublicUser) => store().upsertUsers([u]));
+  on('server:create', (b: ServerBundle) => {
     store().applyServerBundle(b);
     registerEmojiUrls(b.emojis);
   });
-  socket.on('server:update', (sv: Server) => store().updateServer(sv));
-  socket.on('server:delete', (e: { id: number; reason?: string }) => {
+  on('server:update', (sv: Server) => store().updateServer(sv));
+  on('server:delete', (e: { id: number; reason?: string }) => {
     const wasHere = window.location.pathname.startsWith(`/channels/${e.id}`);
     store().removeServer(e.id);
     if (wasHere) navigateTo('/channels/@me');
     const vc = useVoice.getState().channelId;
     if (vc && !store().channels[vc]) void voice.leave(false);
   });
-  socket.on('server:refresh', (e: { id: number }) => refreshServer(e.id));
-  socket.on('channel:create', (c: Channel) => store().upsertChannel(c));
-  socket.on('channel:update', (c: Channel) => store().upsertChannel(c));
-  socket.on('channel:delete', (e: { id: number }) => store().removeChannel(e.id));
-  socket.on('roles:update', (e: { serverId: number; roles: Role[] }) => store().setRoles(e.serverId, e.roles));
-  socket.on('emojis:update', (e: { serverId: number; emojis: CustomEmoji[] }) => {
+  on('server:refresh', (e: { id: number }) => refreshServer(e.id));
+  on('channel:create', (c: Channel) => store().upsertChannel(c));
+  on('channel:update', (c: Channel) => store().upsertChannel(c));
+  on('channel:delete', (e: { id: number }) => store().removeChannel(e.id));
+  on('roles:update', (e: { serverId: number; roles: Role[] }) => store().setRoles(e.serverId, e.roles));
+  on('emojis:update', (e: { serverId: number; emojis: CustomEmoji[] }) => {
     store().setEmojis(e.serverId, e.emojis);
     registerEmojiUrls(e.emojis);
   });
-  socket.on('member:add', (m: Member) => store().upsertMember(m));
-  socket.on('member:update', (m: Member) => store().upsertMember(m));
-  socket.on('member:remove', (e: { serverId: number; userId: number }) => store().removeMember(e.serverId, e.userId));
-  socket.on('relationship:update', (e: { userId: number; type: RelationshipType | null; user: PublicUser }) =>
+  on('member:add', (m: Member) => store().upsertMember(m));
+  on('member:update', (m: Member) => store().upsertMember(m));
+  on('member:remove', (e: { serverId: number; userId: number }) => store().removeMember(e.serverId, e.userId));
+  on('relationship:update', (e: { userId: number; type: RelationshipType | null; user: PublicUser }) =>
     store().setRelationship(e.userId, e.type, e.user),
   );
-  socket.on('readstate:update', (rs: ReadState) => store().setReadState(rs));
-  socket.on('readstate:bulk', (list: ReadState[]) => list.forEach((rs) => store().setReadState(rs)));
-  socket.on('settings:update', (e: { serverId: number; notifyLevel: 'all' | 'mentions' | 'none'; muted: boolean }) =>
+  on('readstate:update', (rs: ReadState) => store().setReadState(rs));
+  on('readstate:bulk', (list: ReadState[]) => list.forEach((rs) => store().setReadState(rs)));
+  on('settings:update', (e: { serverId: number; notifyLevel: 'all' | 'mentions' | 'none'; muted: boolean }) =>
     store().setSettings(e.serverId, { notifyLevel: e.notifyLevel, muted: e.muted }),
   );
 
-  socket.on('voice:state', (e: { channelId: number; participants: VoiceParticipant[] }) => {
+  on('voice:state', (e: { channelId: number; participants: VoiceParticipant[] }) => {
     const before = store().voiceStates[e.channelId] ?? [];
     store().setVoiceState(e.channelId, e.participants);
     if (useVoice.getState().channelId === e.channelId) {
@@ -191,9 +195,9 @@ export function startRealtime() {
       stopRinging();
     }
   });
-  socket.on('voice:signal', (e: { from: number; data: unknown }) => void voice.onSignal(e.from, e.data as never));
-  socket.on('voice:kicked', () => void voice.leave(false));
-  socket.on('call:ring', (e: { channelId: number; from: number }) => {
+  on('voice:signal', (e: { from: number; data: unknown }) => void voice.onSignal(e.from, e.data as never));
+  on('voice:kicked', () => void voice.leave(false));
+  on('call:ring', (e: { channelId: number; from: number }) => {
     if (useVoice.getState().channelId === e.channelId || store().me?.status === 'dnd') return;
     useVoice.setState({ incoming: e });
     startRinging();

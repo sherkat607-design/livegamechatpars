@@ -3,6 +3,9 @@ import type { VoiceParticipant } from '@shared/types';
 import { sounds } from './notify';
 import { getSocket } from './socket';
 
+/** Screen sharing needs getDisplayMedia, which the Android WebView and most phones lack. */
+export const canShareScreen = typeof navigator !== 'undefined' && !!navigator.mediaDevices && 'getDisplayMedia' in navigator.mediaDevices;
+
 // ---------- UI state for voice ----------
 
 export interface VoiceUi {

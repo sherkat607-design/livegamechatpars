@@ -7,6 +7,7 @@ import { CHANNEL_PERMISSIONS, PERMISSION_GROUPS, P, type PermissionName } from '
 import { EMOJI_NAME_RE, LIMITS } from '@shared/constants';
 import { errorText, num, setLang, useLang, useT } from '../../i18n';
 import { api } from '../../lib/api';
+import { publicOrigin, setToken } from '../../lib/env';
 import { loadMembers, logout, updateProfile } from '../../lib/actions';
 import { fullDate, memberSince, relative } from '../../lib/format';
 import { getNotifyPrefs, requestDesktopPermission, setNotifyPrefs } from '../../lib/notify';
@@ -32,7 +33,7 @@ function SettingsLayout({ title, tabs, tab, setTab, onClose, children }: { title
     return () => document.removeEventListener('keydown', onKey);
   }, [onClose]);
   return createPortal(
-    <div role="dialog" aria-modal="true" aria-label={title} className="fixed inset-0 z-50 flex bg-bg-2 max-md:flex-col">
+    <div role="dialog" aria-modal="true" aria-label={title} className="safe-area fixed inset-0 z-50 flex bg-bg-2 max-md:flex-col">
       <nav className="flex shrink-0 justify-end overflow-y-auto bg-bg-1 md:w-[30%] md:min-w-[220px] md:py-12">
         <div className="flex w-full gap-1 overflow-x-auto p-2 md:w-52 md:flex-col md:p-0">
           <h2 className="hidden px-2.5 pb-2 text-[12px] font-semibold text-text-3 md:block">{title}</h2>
@@ -575,7 +576,7 @@ function InvitesTab({ serverId }: { serverId: number }) {
                   {inv.expiresAt && <span className="ms-3">{t('ss.expires', { time: relative(inv.expiresAt) })}</span>}
                 </div>
               </div>
-              <IconButton label={t('invite.copy')} onClick={() => void navigator.clipboard?.writeText(`${window.location.origin}/invite/${inv.code}`)}>
+              <IconButton label={t('invite.copy')} onClick={() => void navigator.clipboard?.writeText(`${publicOrigin()}/invite/${inv.code}`)}>
                 <Copy size={16} />
               </IconButton>
               <IconButton label={t('ss.revoke')} danger onClick={async () => (await run(() => api.del(`/api/invites/${inv.code}`))) && void load()}>
@@ -734,7 +735,7 @@ function WebhooksTab({ serverId }: { serverId: number }) {
                   variant="secondary"
                   small
                   onClick={() => {
-                    void navigator.clipboard?.writeText(`${window.location.origin}${w.url}`);
+                    void navigator.clipboard?.writeText(`${publicOrigin()}${w.url}`);
                     toast(t('ss.webhookCopied'), 'success');
                   }}
                 >
@@ -745,7 +746,7 @@ function WebhooksTab({ serverId }: { serverId: number }) {
                 </IconButton>
               </div>
               <pre dir="ltr" className="mt-2 overflow-x-auto rounded bg-bg-0/60 p-2 text-start text-[12px] text-text-3">
-                {`curl -X POST ${window.location.origin}${w.url} \\\n  -H "Content-Type: application/json" \\\n  -d '{"content":"Match started!"}'`}
+                {`curl -X POST ${publicOrigin()}${w.url} \\\n  -H "Content-Type: application/json" \\\n  -d '{"content":"Match started!"}'`}
               </pre>
             </li>
           ))}
@@ -1120,7 +1121,9 @@ function AccountTab() {
             <Button
               disabled={!current || next.length < LIMITS.passwordMin}
               onClick={async () => {
-                if (await run(() => api.post('/api/users/me/password', { currentPassword: current, newPassword: next }), t('us.passwordChanged'))) {
+                const res = await run(() => api.post<{ token: string }>('/api/users/me/password', { currentPassword: current, newPassword: next }), t('us.passwordChanged'));
+                if (res) {
+                  setToken(res.token);
                   setCurrent('');
                   setNext('');
                 }
@@ -1140,7 +1143,10 @@ function AccountTab() {
               disabled={!deletePw}
               onClick={async () => {
                 if (!(await confirmDialog({ title: t('us.deleteAccount'), body: t('us.deleteAccountConfirm'), confirmText: t('common.delete'), danger: true }))) return;
-                if (await run(() => api.del('/api/users/me', { password: deletePw }))) window.location.href = '/login';
+                if (await run(() => api.del('/api/users/me', { password: deletePw }))) {
+                  setToken(null);
+                  window.location.href = '/login';
+                }
               }}
             >
               {t('us.deleteAccount')}

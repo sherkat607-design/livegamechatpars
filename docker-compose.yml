@@ -1,0 +1,78 @@
+# Production setup: app + PostgreSQL.
+#   docker compose up -d                     → http://SERVER_IP:3000 (testing)
+#   docker compose --profile https up -d     → https://DOMAIN with a free certificate (Caddy)
+#   add --profile turn                       → TURN relay so voice/video work on mobile networks
+# Settings come from .env (copy .env.example).
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: lgcp
+      POSTGRES_USER: lgcp
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lgcp -d lgcp"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://lgcp:${POSTGRES_PASSWORD}@db:5432/lgcp
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      SECURE_COOKIES: ${SECURE_COOKIES:-true}
+      TRUST_PROXY: "true"
+      MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-25}
+      CORS_ORIGINS: ${CORS_ORIGINS:-https://localhost,http://localhost,capacitor://localhost}
+      TURN_URL: ${TURN_URL:-}
+      TURN_USERNAME: ${TURN_USERNAME:-}
+      TURN_CREDENTIAL: ${TURN_PASSWORD:-}
+    volumes:
+      - uploads:/data
+    ports:
+      - "${APP_PORT:-3000}:3000"
+
+  # Automatic HTTPS for DOMAIN (voice, video and the Android app need HTTPS).
+  caddy:
+    image: caddy:2
+    profiles: ["https"]
+    restart: unless-stopped
+    depends_on: [app]
+    command: caddy reverse-proxy --from ${DOMAIN:?Set DOMAIN in .env} --to app:3000
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - caddy:/data
+
+  # TURN relay for people behind strict NATs (common on mobile data).
+  turn:
+    image: coturn/coturn:4.6
+    profiles: ["turn"]
+    restart: unless-stopped
+    network_mode: host
+    command:
+      - -n
+      - --listening-port=3478
+      - --realm=${DOMAIN:-livegamechat}
+      - --lt-cred-mech
+      - --user=${TURN_USERNAME:-lgcp}:${TURN_PASSWORD:-change-me}
+      - --fingerprint
+      - --no-cli
+      - --min-port=49160
+      - --max-port=49200
+
+volumes:
+  db:
+  uploads:
+  caddy:

@@ -5,7 +5,7 @@ import type { Channel, VoiceParticipant } from '@shared/types';
 import { errorText, useT } from '../../i18n';
 import { channelPerms, has, P } from '../../lib/perms';
 import { stopRinging } from '../../lib/notify';
-import { useVoice, voice } from '../../lib/voice';
+import { canShareScreen, useVoice, voice } from '../../lib/voice';
 import { dmName, displayName, NO_PARTICIPANTS, useStore } from '../../store';
 import { useUi } from '../../store/ui';
 import { Avatar, Button, cx, IconButton, toast } from '../ui';
@@ -114,9 +114,11 @@ export function VoiceStage({ channel, compact }: { channel: Channel; compact?: b
                 <RoundButton label={v.video ? t('voice.cameraOff') : t('voice.cameraOn')} active={v.video} onClick={() => void voice.toggleCamera()}>
                   {v.video ? <Video size={20} /> : <VideoOff size={20} />}
                 </RoundButton>
-                <RoundButton label={v.screen ? t('voice.stopShare') : t('voice.shareScreen')} active={v.screen} onClick={() => void voice.toggleScreen()}>
-                  <MonitorUp size={20} />
-                </RoundButton>
+                {canShareScreen && (
+                  <RoundButton label={v.screen ? t('voice.stopShare') : t('voice.shareScreen')} active={v.screen} onClick={() => void voice.toggleScreen()}>
+                    <MonitorUp size={20} />
+                  </RoundButton>
+                )}
               </>
             )}
             <RoundButton label={t('voice.disconnect')} hangup onClick={() => void voice.leave()}>

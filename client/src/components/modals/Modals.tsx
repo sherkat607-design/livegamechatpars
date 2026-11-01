@@ -5,6 +5,7 @@ import type { Channel, Invite, ServerBundle } from '@shared/types';
 import { INVITE_MAX_AGES, INVITE_MAX_USES, LIMITS } from '@shared/constants';
 import { errorText, num, useT } from '../../i18n';
 import { api } from '../../lib/api';
+import { publicOrigin } from '../../lib/env';
 import { joinInvite, sendMessage } from '../../lib/actions';
 import { registerEmojiUrls } from '../../lib/markdown';
 import { NO_ROLES, useStore } from '../../store';
@@ -162,7 +163,7 @@ function InviteModal({ serverId, channelId, onClose }: { serverId: number; chann
       .then(setInvite)
       .catch((err) => toast(errorText(err), 'error'));
   }, [serverId, channelId, maxAge, maxUses]);
-  const link = invite ? `${window.location.origin}/invite/${invite.code}` : '';
+  const link = invite ? `${publicOrigin()}/invite/${invite.code}` : '';
   return (
     <Modal open onClose={onClose} title={t('invite.title', { name: server?.name ?? '' })}>
       <div className="flex flex-col gap-4">

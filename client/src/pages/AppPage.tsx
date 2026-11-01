@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { matchPath, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useT } from '../i18n';
 import { setUnauthorizedHandler } from '../lib/api';
+import { setToken } from '../lib/env';
 import { setNavigator, startRealtime } from '../lib/realtime';
 import { useStore } from '../store';
 import { useUi } from '../store/ui';
@@ -34,6 +35,7 @@ export function AppPage() {
 
   useEffect(() => {
     setUnauthorizedHandler(() => {
+      setToken(null);
       useStore.getState().reset();
       navigate(`/login?next=${encodeURIComponent(window.location.pathname)}`, { replace: true });
     });

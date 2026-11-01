@@ -6,7 +6,8 @@
   "type": "module",
   "workspaces": [
     "server",
-    "client"
+    "client",
+    "mobile"
   ],
   "engines": {
     "node": ">=22.12"
@@ -19,11 +20,16 @@
     "test:e2e": "npm run build && playwright test -c e2e/playwright.config.ts",
     "typecheck": "npm run typecheck -w server && npm run typecheck -w client",
     "db:generate": "npm run db:generate -w server",
-    "check:i18n": "node client/scripts/check-i18n.mjs"
+    "check:i18n": "node client/scripts/check-i18n.mjs",
+    "android:sync": "npm run sync -w mobile",
+    "android:open": "npm run open -w mobile"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0",
     "concurrently": "10.0.6",
     "typescript": "6.0.3"
+  },
+  "overrides": {
+    "glob": "14.0.3"
   }
 }

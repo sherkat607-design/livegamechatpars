@@ -20,6 +20,8 @@ export interface Config {
   logLevel: string;
   /** Disable rate limits (tests). */
   rateLimit: boolean;
+  /** Origins of native apps allowed to call the API (Capacitor uses https://localhost on Android). */
+  corsOrigins: string[];
 }
 
 function parseIceServers(env: NodeJS.ProcessEnv): ClientConfig['iceServers'] {
@@ -71,6 +73,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env, overrides: Part
     trustProxy: env.TRUST_PROXY === 'true',
     logLevel: env.LOG_LEVEL ?? (production ? 'info' : 'debug'),
     rateLimit: env.RATE_LIMIT !== 'false',
+    corsOrigins: (env.CORS_ORIGINS ?? 'https://localhost,http://localhost,capacitor://localhost')
+      .split(',')
+      .map((o) => o.trim())
+      .filter(Boolean),
   };
   return { ...base, ...overrides };
 }

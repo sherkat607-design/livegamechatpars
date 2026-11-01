@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs';
 import { extname } from 'node:path';
 import cookie from '@fastify/cookie';
+import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import multipart from '@fastify/multipart';
 import rateLimit from '@fastify/rate-limit';
@@ -53,6 +54,14 @@ export async function buildApp(config: Config): Promise<BuiltApp> {
   ctx.gateway = new Gateway(ctx, app.server);
 
   await app.register(cookie);
+  // The Android app runs from its own origin and authenticates with a bearer token (no cookies).
+  await app.register(cors, {
+    origin: config.corsOrigins,
+    credentials: false,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+    allowedHeaders: ['content-type', 'authorization'],
+    maxAge: 86400,
+  });
   await app.register(helmet, {
     contentSecurityPolicy: {
       directives: {
@@ -103,7 +112,8 @@ export async function buildApp(config: Config): Promise<BuiltApp> {
       res.header('X-Content-Type-Options', 'nosniff');
       res.header('Content-Security-Policy', "default-src 'none'; img-src 'self'; media-src 'self'; style-src 'unsafe-inline'; sandbox");
       res.header('Cache-Control', 'public, max-age=31536000, immutable');
-      res.header('Cross-Origin-Resource-Policy', 'same-origin');
+      // Public files; the Android app shows them from another origin.
+      res.header('Cross-Origin-Resource-Policy', 'cross-origin');
       if (!INLINE_EXT.has(extname(filePath).toLowerCase())) res.header('Content-Disposition', 'attachment');
     },
   });

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">لایو گیم چت پارس</string>
+    <string name="title_activity_main">لایو گیم چت پارس</string>
+    <string name="package_name">com.livegamechatpars.app</string>
+    <string name="custom_url_scheme">com.livegamechatpars.app</string>
+</resources>

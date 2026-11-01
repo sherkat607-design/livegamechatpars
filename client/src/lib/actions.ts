@@ -4,6 +4,7 @@ import { useStore, type PendingMessage } from '../store';
 import { useUi } from '../store/ui';
 import { toast } from '../components/ui';
 import { api, ApiError } from './api';
+import { setToken } from './env';
 import { loadEmojis } from './emoji';
 import { registerEmojiUrls } from './markdown';
 
@@ -245,6 +246,7 @@ export async function updateProfile(patch: Record<string, unknown>): Promise<boo
 
 export async function logout() {
   await api.post('/api/auth/logout').catch(() => undefined);
+  setToken(null);
   window.location.href = '/login';
 }
 

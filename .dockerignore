@@ -1,0 +1,12 @@
+node_modules
+**/node_modules
+**/dist
+data
+.git
+.github
+test-results
+playwright-report
+mobile/www
+mobile/android
+.env
+.env.*

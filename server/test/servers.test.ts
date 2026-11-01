@@ -37,6 +37,26 @@ describe('accounts', () => {
     expect((await alice.get('/api/auth/me')).body.user.id).toBe(alice.user.id);
   });
 
+  it('lets the Android app call the API from its own origin with a bearer token', async () => {
+    const c = await Client.register(srv, 'native_user');
+    const pre = await fetch(`${srv.url}/api/bootstrap`, {
+      method: 'OPTIONS',
+      headers: { origin: 'https://localhost', 'access-control-request-method': 'GET', 'access-control-request-headers': 'authorization' },
+    });
+    expect(pre.status).toBe(204);
+    expect(pre.headers.get('access-control-allow-origin')).toBe('https://localhost');
+    expect(pre.headers.get('access-control-allow-headers')).toContain('authorization');
+    const res = await fetch(`${srv.url}/api/bootstrap`, { headers: { origin: 'https://localhost', authorization: `Bearer ${c.token}` } });
+    expect(res.status).toBe(200);
+    expect(res.headers.get('access-control-allow-origin')).toBe('https://localhost');
+    // Other websites get no CORS permission.
+    const evil = await fetch(`${srv.url}/api/bootstrap`, {
+      method: 'OPTIONS',
+      headers: { origin: 'https://evil.example', 'access-control-request-method': 'GET' },
+    });
+    expect(evil.headers.get('access-control-allow-origin')).toBeNull();
+  });
+
   it('updates the profile and rejects taken usernames', async () => {
     const c = await Client.register(srv, 'profile_user');
     const res = await c.patch('/api/users/me', { displayName: 'پروفایل', bio: 'سلام', activity: 'Valorant', status: 'dnd' });

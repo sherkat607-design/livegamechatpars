@@ -50,6 +50,7 @@ export class Gateway {
       path: '/socket.io',
       serveClient: false,
       maxHttpBufferSize: 256 * 1024,
+      cors: { origin: app.config.corsOrigins, credentials: false },
       pingInterval: 20000,
       pingTimeout: 20000,
     });

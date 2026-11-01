@@ -1,0 +1,20 @@
+{
+  "name": "@lgcp/mobile",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Android app: a native shell around the LiveGameChat Pars web app",
+  "scripts": {
+    "prepare-web": "node scripts/prepare-web.mjs",
+    "sync": "npm run prepare-web && cap sync android",
+    "open": "cap open android",
+    "icons": "node scripts/make-icons.mjs"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.6.0"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.6.0",
+    "@capacitor/core": "8.6.0"
+  }
+}
