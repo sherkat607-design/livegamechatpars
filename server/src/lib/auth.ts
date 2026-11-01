@@ -67,6 +67,23 @@ export class AuthService {
     }
   }
 
+  /**
+   * Rate-limit key: the signed-in account when the token's signature checks out, otherwise the IP.
+   * Many mobile users share one IP behind carrier NAT, so limits must follow accounts.
+   */
+  rateKey = async (req: FastifyRequest): Promise<string> => {
+    const token = this.tokenFromRequest(req);
+    if (token) {
+      try {
+        const { payload } = await jwtVerify(token, this.key, { algorithms: ['HS256'] });
+        if (payload.sub) return `u:${payload.sub}`;
+      } catch {
+        // fall through to the IP
+      }
+    }
+    return `ip:${req.ip}`;
+  };
+
   tokenFromRequest(req: FastifyRequest): string | undefined {
     const header = req.headers.authorization;
     if (header?.startsWith('Bearer ')) return header.slice(7);

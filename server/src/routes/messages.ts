@@ -34,7 +34,10 @@ const CUSTOM_EMOJI = /^([a-zA-Z0-9_]{2,32}):(\d{1,10})$/;
 export default async function messageRoutes(app: FastifyInstance, ctx: AppContext) {
   const authed = { preHandler: ctx.auth.requireUser };
   const { db } = ctx;
-  const sendLimit = { preHandler: ctx.auth.requireUser, config: { rateLimit: { max: 10, timeWindow: 5000 } } };
+  const sendLimit = {
+    preHandler: ctx.auth.requireUser,
+    config: { rateLimit: { max: 10, timeWindow: 5000, keyGenerator: ctx.auth.rateKey } },
+  };
 
   async function loadMessage(messageId: number, userId: number): Promise<{ message: MessageRow; access: ChannelAccess }> {
     const [message] = await db.select().from(messages).where(eq(messages.id, messageId));

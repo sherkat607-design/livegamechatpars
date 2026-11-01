@@ -84,6 +84,7 @@ export async function buildApp(config: Config): Promise<BuiltApp> {
     await app.register(rateLimit, {
       max: 600,
       timeWindow: '1 minute',
+      keyGenerator: ctx.auth.rateKey,
       errorResponseBuilder: (_req, context) =>
         Object.assign(new Error('Too many requests'), {
           statusCode: 429,

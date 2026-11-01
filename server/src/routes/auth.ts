@@ -1,5 +1,5 @@
 import { eq, or } from 'drizzle-orm';
-import type { FastifyInstance } from 'fastify';
+import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import { LIMITS, USERNAME_RE } from '@shared/constants';
 import type { AppContext } from '../context';
@@ -26,9 +26,24 @@ const loginSchema = z.object({
 });
 
 export default async function authRoutes(app: FastifyInstance, ctx: AppContext) {
-  const strict = { config: { rateLimit: { max: 20, timeWindow: '1 minute' } } };
+  // Sign-ups per IP; generous because many users can share one IP on mobile networks.
+  const signupLimit = { config: { rateLimit: { max: 60, timeWindow: '1 minute' } } };
+  // Password guessing is limited per account name, whatever IP it comes from.
+  const loginLimit = {
+    config: {
+      rateLimit: {
+        max: 10,
+        timeWindow: '1 minute',
+        hook: 'preHandler' as const,
+        keyGenerator: (req: FastifyRequest) => {
+          const login = (req.body as { login?: unknown } | undefined)?.login;
+          return typeof login === 'string' && login.trim() ? `login:${login.trim().toLowerCase().slice(0, 254)}` : `ip:${req.ip}`;
+        },
+      },
+    },
+  };
 
-  app.post('/api/auth/register', strict, async (req, reply) => {
+  app.post('/api/auth/register', signupLimit, async (req, reply) => {
     const body = parse(registerSchema, req.body);
     const existing = await ctx.db
       .select({ username: users.username, email: users.email })
@@ -51,7 +66,7 @@ export default async function authRoutes(app: FastifyInstance, ctx: AppContext) 
     return { user: selfUser(user, ctx.presence), token };
   });
 
-  app.post('/api/auth/login', strict, async (req, reply) => {
+  app.post('/api/auth/login', loginLimit, async (req, reply) => {
     const body = parse(loginSchema, req.body);
     const [user] = await ctx.db
       .select()

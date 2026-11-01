@@ -12,7 +12,7 @@ export interface TestServer extends BuiltApp {
   stop: () => Promise<void>;
 }
 
-export async function startServer(): Promise<TestServer> {
+export async function startServer(overrides: Partial<Parameters<typeof loadConfig>[1]> = {}): Promise<TestServer> {
   const dir = mkdtempSync(join(tmpdir(), 'lgcp-test-'));
   const config = loadConfig(
     { NODE_ENV: 'test' },
@@ -24,6 +24,7 @@ export async function startServer(): Promise<TestServer> {
       rateLimit: false,
       logLevel: 'silent',
       iceServers: [],
+      ...overrides,
     },
   );
   const built = await buildApp(config);
